@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>OT Tracker</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f0f14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="OT Tracker">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f0f14;
+      --surface: #1a1a24;
+      --surface2: #22222e;
+      --surface3: #2a2a38;
+      --accent: #f97316;
+      --accent2: #fb923c;
+      --accent-glow: rgba(249,115,22,0.25);
+      --green: #22c55e;
+      --blue: #3b82f6;
+      --purple: #a855f7;
+      --red: #ef4444;
+      --text: #f1f5f9;
+      --text2: #94a3b8;
+      --text3: #64748b;
+      --border: rgba(255,255,255,0.07);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Sarabun', sans-serif;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      overflow-x: hidden;
+      user-select: none;
+    }
+
+    /* ── App Shell ── */
+    .app {
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .header {
+      padding: 52px 20px 16px;
+      background: linear-gradient(180deg, rgba(249,115,22,0.08) 0%, transparent 100%);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .header h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: -0.5px;
+    }
+
+    .header .subtitle {
+      font-size: 13px;
+      color: var(--text3);
+      margin-top: 2px;
+    }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .month-nav button {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .month-nav button:active { background: var(--surface3); transform: scale(0.95); }
+
+    .month-label {
+      flex: 1;
+      text-align: center;
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 14px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text3);
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* ── Content ── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 0 0 100px;
+    }
+
+    /* ── Calendar ── */
+    .calendar-wrap { padding: 16px; }
+
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      margin-bottom: 8px;
+    }
+
+    .weekday {
+      text-align: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text3);
+      padding: 6px 0;
+      letter-spacing: 0.5px;
+    }
+
+    .weekday:nth-child(7) { color: var(--red); }
+    .weekday:nth-child(1) { color: #f97316; }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+
+    .day-cell {
+      aspect-ratio: 1;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      transition: all 0.15s;
+      position: relative;
+      overflow: hidden;
+      padding: 4px;
+    }
+
+    .day-cell:active { transform: scale(0.93); }
+
+    .day-cell.empty {
+      background: transparent;
+      border-color: transparent;
+      pointer-events: none;
+    }
+
+    .day-cell.today {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+    }
+
+    .day-cell.has-ot {
+      background: var(--surface2);
+    }
+
+    .day-cell.past { opacity: 0.5; }
+
+    .day-num {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text2);
+      line-height: 1;
+    }
+
+    .day-cell.today .day-num { color: var(--accent); }
+
+    .day-cell.sunday .day-num { color: var(--red); }
+    .day-cell.saturday .day-num { color: #f97316; }
+
+    .ot-badge {
+      margin-top: 3px;
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--accent);
+      background: var(--accent-glow);
+      border-radius: 4px;
+      padding: 1px 3px;
+      line-height: 1.2;
+      text-align: center;
+    }
+
+    .ot-type-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      margin-top: 2px;
+    }
+
+    /* ── Bottom Nav ── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 430px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      padding: 8px 0 20px;
+      z-index: 100;
+    }
+
+    .nav-item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      padding: 8px;
+      transition: all 0.15s;
+    }
+
+    .nav-icon {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 8px;
+      font-size: 18px;
+      transition: all 0.15s;
+    }
+
+    .nav-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text3);
+      transition: all 0.15s;
+    }
+
+    .nav-item.active .nav-icon { background: var(--accent-glow); }
+    .nav-item.active .nav-label { color: var(--accent); }
+
+    /* ── Modal ── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 200;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+
+    .overlay.open { display: flex; }
+
+    .sheet {
+      width: 100%;
+      max-width: 430px;
+      background: var(--surface);
+      border-radius: 24px 24px 0 0;
+      padding: 0 0 40px;
+      animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .sheet-handle {
+      width: 36px;
+      height: 4px;
+      background: var(--surface3);
+      border-radius: 2px;
+      margin: 12px auto 0;
+    }
+
+    .sheet-header {
+      padding: 16px 20px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sheet-title {
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .sheet-date {
+      font-size: 13px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .btn-close {
+      width: 32px;
+      height: 32px;
+      background: var(--surface2);
+      border: none;
+      border-radius: 8px;
+      color: var(--text2);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sheet-body { padding: 20px; }
+
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text3);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    /* ── Hour Buttons ── */
+    .hour-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+
+    .hour-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 12px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'Space Mono', monospace;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+
+    .hour-btn:active { transform: scale(0.93); }
+
+    .hour-btn.selected {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+      box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .hour-btn.zero {
+      grid-column: span 4;
+      background: rgba(239,68,68,0.1);
+      border-color: rgba(239,68,68,0.3);
+      color: var(--red);
+      font-size: 13px;
+      padding: 10px;
+    }
+
+    .hour-btn.zero.selected {
+      background: var(--red);
+      border-color: var(--red);
+      color: white;
+      box-shadow: 0 0 20px rgba(239,68,68,0.3);
+    }
+
+    /* ── OT Type ── */
+    .ot-type-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .type-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      padding: 16px 8px;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+
+    .type-btn:active { transform: scale(0.93); }
+
+    .type-btn .multiplier {
+      font-family: 'Space Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      display: block;
+    }
+
+    .type-btn .type-desc {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 4px;
+    }
+
+    .type-btn.x15 .multiplier { color: var(--green); }
+    .type-btn.x2 .multiplier { color: var(--blue); }
+    .type-btn.x3 .multiplier { color: var(--purple); }
+
+    .type-btn.x15.selected { background: rgba(34,197,94,0.15); border-color: var(--green); }
+    .type-btn.x2.selected { background: rgba(59,130,246,0.15); border-color: var(--blue); }
+    .type-btn.x3.selected { background: rgba(168,85,247,0.15); border-color: var(--purple); }
+
+    .type-btn.disabled { opacity: 0.3; pointer-events: none; }
+
+    /* ── Preview card ── */
+    .preview-card {
+      background: var(--surface2);
+      border-radius: var(--radius);
+      padding: 16px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+
+    .preview-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 0;
+    }
+
+    .preview-row + .preview-row {
+      border-top: 1px solid var(--border);
+    }
+
+    .preview-label { font-size: 13px; color: var(--text2); }
+    .preview-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .preview-total .preview-label { font-weight: 700; color: var(--text); }
+    .preview-total .preview-value { font-size: 16px; color: var(--green); }
+
+    /* ── Save Button ── */
+    .btn-save {
+      width: 100%;
+      background: var(--accent);
+      border: none;
+      color: white;
+      padding: 16px;
+      border-radius: var(--radius);
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'Sarabun', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+      box-shadow: 0 4px 20px var(--accent-glow);
+    }
+
+    .btn-save:active { transform: scale(0.97); opacity: 0.9; }
+
+    /* ── Summary Page ── */
+    .summary-wrap { padding: 16px; }
+
+    .summary-hero {
+      background: linear-gradient(135deg, var(--surface2) 0%, var(--surface) 100%);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .summary-hero::before {
+      content: '';
+      position: absolute;
+      top: -40px;
+      right: -40px;
+      width: 120px;
+      height: 120px;
+      background: var(--accent-glow);
+      border-radius: 50%;
+      filter: blur(30px);
+    }
+
+    .hero-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text3);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .hero-amount {
+      font-family: 'Space Mono', monospace;
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--green);
+      line-height: 1;
+    }
+
+    .hero-subtitle {
+      font-size: 12px;
+      color: var(--text3);
+      margin-top: 6px;
+    }
+
+    .stat-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text3);
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .stat-unit {
+      font-size: 12px;
+      color: var(--text3);
+      margin-top: 4px;
+    }
+
+    .breakdown-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .breakdown-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .breakdown-row:first-of-type { border-top: none; }
+
+    .breakdown-label { font-size: 14px; color: var(--text2); }
+    .breakdown-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+    .breakdown-amount {
+      font-family: 'Space Mono', monospace;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .grand-total-row {
+      margin-top: 8px;
+      padding-top: 16px;
+      border-top: 2px solid var(--accent) !important;
+    }
+
+    .grand-total-row .breakdown-label {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .grand-total-row .breakdown-amount {
+      font-size: 20px;
+      color: var(--green);
+    }
+
+    /* OT type breakdown */
+    .ot-type-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 0;
+      border-top: 1px solid var(--border);
+    }
+
+    .ot-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .ot-info { flex: 1; }
+    .ot-info .name { font-size: 14px; font-weight: 600; }
+    .ot-info .hours { font-size: 12px; color: var(--text3); }
+
+    .ot-pay {
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    /* Day list in summary */
+    .day-list { margin-bottom: 16px; }
+
+    .day-list-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text3);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 0 4px;
+      margin-bottom: 8px;
+    }
+
+    .day-entry {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .day-entry:active { background: var(--surface2); }
+
+    .day-entry-date {
+      font-family: 'Space Mono', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text2);
+      width: 28px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    .day-entry-info { flex: 1; }
+    .day-entry-info .weekname { font-size: 12px; color: var(--text3); }
+    .day-entry-info .otinfo {
+      font-size: 14px;
+      font-weight: 600;
+      margin-top: 2px;
+    }
+
+    .day-entry-earn {
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      text-align: right;
+    }
+
+    .day-entry-earn .earn-sub {
+      font-size: 11px;
+      color: var(--text3);
+      font-family: 'Sarabun', sans-serif;
+      font-weight: 400;
+    }
+
+    .type-tag {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .tag-15 { background: rgba(34,197,94,0.15); color: var(--green); }
+    .tag-2 { background: rgba(59,130,246,0.15); color: var(--blue); }
+    .tag-3 { background: rgba(168,85,247,0.15); color: var(--purple); }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text3);
+    }
+
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; line-height: 1.6; }
+
+    /* ── Salary settings ── */
+    .settings-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px 20px;
+      margin-bottom: 16px;
+    }
+
+    .settings-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+    }
+
+    .settings-row + .settings-row { border-top: 1px solid var(--border); }
+
+    .settings-label { font-size: 13px; color: var(--text2); }
+
+    .settings-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 0; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: var(--green);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 100px;
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 999;
+      opacity: 0;
+      transition: all 0.3s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <h1>⏱ OT TRACKER</h1>
+        <div class="subtitle" id="headerSub">บันทึกล่วงเลาทำงาน</div>
+      </div>
+    </div>
+    <div class="month-nav">
+      <button onclick="changeMonth(-1)">‹</button>
+      <div class="month-label" id="monthLabel"></div>
+      <button onclick="changeMonth(1)">›</button>
+    </div>
+  </div>
+
+  <div class="content">
+    <!-- Calendar Page -->
+    <div class="page active" id="page-calendar">
+      <div class="calendar-wrap">
+        <div class="weekdays">
+          <div class="weekday">อา</div>
+          <div class="weekday">จ</div>
+          <div class="weekday">อ</div>
+          <div class="weekday">พ</div>
+          <div class="weekday">พฤ</div>
+          <div class="weekday">ศ</div>
+          <div class="weekday">ส</div>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+      </div>
+    </div>
+
+    <!-- Summary Page -->
+    <div class="page" id="page-summary">
+      <div class="summary-wrap" id="summaryContent"></div>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="nav-item active" id="nav-calendar" onclick="switchPage('calendar')">
+      <div class="nav-icon">📅</div>
+      <div class="nav-label">ปฏิทิน</div>
+    </div>
+    <div class="nav-item" id="nav-summary" onclick="switchPage('summary')">
+      <div class="nav-icon">📊</div>
+      <div class="nav-label">สรุป</div>
+    </div>
+    <div class="nav-item" id="nav-info" onclick="switchPage('info')">
+      <div class="nav-icon">⚙️</div>
+      <div class="nav-label">ข้อมูล</div>
+    </div>
+  </div>
+</div>
+
+<!-- Info Page (in content) -->
+<div class="page" id="page-info" style="display:none;">
+  <!-- injected via JS -->
+</div>
+
+<!-- OT Entry Modal -->
+<div class="overlay" id="overlay" onclick="closeSheet(event)">
+  <div class="sheet" id="sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div>
+        <div class="sheet-title">บันทึก OT</div>
+        <div class="sheet-date" id="sheetDate"></div>
+      </div>
+      <button class="btn-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="section-label">จำนวนชั่วโมง OT</div>
+      <div class="hour-grid">
+        <button class="hour-btn zero" data-hours="0" onclick="selectHours(0)">❌ ไม่มี OT</button>
+        <button class="hour-btn" data-hours="0.5" onclick="selectHours(0.5)">0.5</button>
+        <button class="hour-btn" data-hours="1" onclick="selectHours(1)">1</button>
+        <button class="hour-btn" data-hours="1.5" onclick="selectHours(1.5)">1.5</button>
+        <button class="hour-btn" data-hours="2" onclick="selectHours(2)">2</button>
+        <button class="hour-btn" data-hours="2.5" onclick="selectHours(2.5)">2.5</button>
+        <button class="hour-btn" data-hours="3" onclick="selectHours(3)">3</button>
+        <button class="hour-btn" data-hours="3.5" onclick="selectHours(3.5)">3.5</button>
+        <button class="hour-btn" data-hours="4" onclick="selectHours(4)">4</button>
+        <button class="hour-btn" data-hours="4.5" onclick="selectHours(4.5)">4.5</button>
+        <button class="hour-btn" data-hours="5" onclick="selectHours(5)">5</button>
+        <button class="hour-btn" data-hours="5.5" onclick="selectHours(5.5)">5.5</button>
+      </div>
+
+      <div class="section-label">ประเภท OT</div>
+      <div class="ot-type-grid" id="otTypeGrid">
+        <button class="type-btn x15 disabled" data-type="1.5" onclick="selectType(1.5)">
+          <span class="multiplier">×1.5</span>
+          <div class="type-desc">วันธรรมดา</div>
+        </button>
+        <button class="type-btn x2 disabled" data-type="2" onclick="selectType(2)">
+          <span class="multiplier">×2</span>
+          <div class="type-desc">วันหยุด</div>
+        </button>
+        <button class="type-btn x3 disabled" data-type="3" onclick="selectType(3)">
+          <span class="multiplier">×3</span>
+          <div class="type-desc">หยุดนักขัตฤกษ์</div>
+        </button>
+      </div>
+
+      <div class="preview-card" id="previewCard" style="display:none">
+        <div class="preview-row">
+          <span class="preview-label">OT Pay</span>
+          <span class="preview-value" id="prevOtPay">—</span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-label">ค่าข้าว</span>
+          <span class="preview-value" id="prevMeal">—</span>
+        </div>
+        <div class="preview-row">
+          <span class="preview-label">ค่ารถ</span>
+          <span class="preview-value" id="prevTransport">—</span>
+        </div>
+        <div class="preview-row preview-total">
+          <span class="preview-label">รวมได้วันนี้</span>
+          <span class="preview-value" id="prevTotal">—</span>
+        </div>
+      </div>
+
+      <button class="btn-save" onclick="saveEntry()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Config ──
+const HOURLY_RATE = 129.6;
+const BASE_SALARY = 21600;
+const MEAL_1H = 83;
+const MEAL_5H = 83;
+const TRANSPORT = 60;
+const WORKING_DAYS = 21; // approximate
+
+// ── State ──
+let currentYear, currentMonth;
+let selectedDate = null;
+let selectedHours = null;
+let selectedType = null;
+let otData = JSON.parse(localStorage.getItem('otData') || '{}');
+
+const thMonths = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const thDays = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+
+// ── Init ──
+(function init() {
+  const now = new Date();
+  currentYear = now.getFullYear();
+  currentMonth = now.getMonth();
+  renderCalendar();
+})();
+
+function save() {
+  localStorage.setItem('otData', JSON.stringify(otData));
+}
+
+function getKey(y, m, d) {
+  return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+}
+
+function changeMonth(delta) {
+  currentMonth += delta;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  renderCalendar();
+  if (document.getElementById('page-summary').classList.contains('active')) {
+    renderSummary();
+  }
+}
+
+function renderCalendar() {
+  const label = `${thMonths[currentMonth]} ${currentYear + 543}`;
+  document.getElementById('monthLabel').textContent = label;
+
+  const grid = document.getElementById('calendarGrid');
+  grid.innerHTML = '';
+
+  const now = new Date();
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  // Empty cells
+  for (let i = 0; i < firstDay; i++) {
+    grid.insertAdjacentHTML('beforeend', '<div class="day-cell empty"></div>');
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(currentYear, currentMonth, d);
+    const dow = date.getDay();
+    const key = getKey(currentYear, currentMonth, d);
+    const entry = otData[key];
+    const isToday = now.getDate() === d && now.getMonth() === currentMonth && now.getFullYear() === currentYear;
+    const isPast = date < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    let cls = 'day-cell';
+    if (isToday) cls += ' today';
+    if (dow === 0) cls += ' sunday';
+    if (dow === 6) cls += ' saturday';
+    if (isPast && !isToday) cls += ' past';
+    if (entry && entry.hours > 0) cls += ' has-ot';
+
+    let badge = '';
+    let dot = '';
+    if (entry && entry.hours > 0) {
+      badge = `<div class="ot-badge">${entry.hours}h</div>`;
+      const colors = {'1.5': '#22c55e', '2': '#3b82f6', '3': '#a855f7'};
+      const c = colors[String(entry.type)] || '#f97316';
+      dot = `<div class="ot-type-dot" style="background:${c}"></div>`;
+    }
+
+    grid.insertAdjacentHTML('beforeend', `
+      <div class="${cls}" onclick="openModal(${d})">
+        <div class="day-num">${d}</div>
+        ${badge}${dot}
+      </div>
+    `);
+  }
+}
+
+// ── Modal ──
+function openModal(day) {
+  selectedDate = day;
+  const key = getKey(currentYear, currentMonth, day);
+  const entry = otData[key];
+
+  const date = new Date(currentYear, currentMonth, day);
+  const dow = thDays[date.getDay()];
+  document.getElementById('sheetDate').textContent = `${day} ${thMonths[currentMonth]} ${currentYear + 543} (${dow})`;
+
+  // Reset
+  selectedHours = entry ? entry.hours : null;
+  selectedType = entry ? entry.type : null;
+
+  // Update buttons
+  document.querySelectorAll('.hour-btn').forEach(btn => {
+    btn.classList.toggle('selected', parseFloat(btn.dataset.hours) === selectedHours);
+  });
+
+  updateTypeButtons();
+  updatePreview();
+
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+}
+
+function closeSheet(e) {
+  if (e.target === document.getElementById('overlay')) closeModal();
+}
+
+function selectHours(h) {
+  selectedHours = h;
+  document.querySelectorAll('.hour-btn').forEach(btn => {
+    btn.classList.toggle('selected', parseFloat(btn.dataset.hours) === h);
+  });
+  if (h === 0) { selectedType = null; }
+  updateTypeButtons();
+  updatePreview();
+}
+
+function selectType(t) {
+  selectedType = t;
+  document.querySelectorAll('.type-btn').forEach(btn => {
+    btn.classList.toggle('selected', parseFloat(btn.dataset.type) === t);
+  });
+  updatePreview();
+}
+
+function updateTypeButtons() {
+  const btns = document.querySelectorAll('.type-btn');
+  const disable = !selectedHours || selectedHours === 0;
+  btns.forEach(btn => {
+    btn.classList.toggle('disabled', disable);
+    if (!disable) {
+      btn.classList.toggle('selected', parseFloat(btn.dataset.type) === selectedType);
+    } else {
+      btn.classList.remove('selected');
+    }
+  });
+}
+
+function calcDay(hours, type) {
+  if (!hours || hours === 0) return { ot: 0, meal: 0, transport: 0, total: 0 };
+  const ot = hours * HOURLY_RATE * type;
+  const meal = hours >= 1 ? MEAL_1H + (hours >= 5 ? MEAL_5H : 0) : 0;
+  const tr = hours >= 1 ? TRANSPORT : 0;
+  return { ot, meal, transport: tr, total: ot + meal + tr };
+}
+
+function updatePreview() {
+  const card = document.getElementById('previewCard');
+  if (!selectedHours || selectedHours === 0 || !selectedType) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+  const c = calcDay(selectedHours, selectedType);
+  document.getElementById('prevOtPay').textContent = `฿${c.ot.toFixed(2)}`;
+  document.getElementById('prevMeal').textContent = `฿${c.meal}`;
+  document.getElementById('prevTransport').textContent = `฿${c.transport}`;
+  document.getElementById('prevTotal').textContent = `฿${c.total.toFixed(2)}`;
+}
+
+function saveEntry() {
+  const key = getKey(currentYear, currentMonth, selectedDate);
+
+  if (selectedHours === 0 || selectedHours === null) {
+    delete otData[key];
+    save();
+    closeModal();
+    renderCalendar();
+    showToast('ลบข้อมูล OT แล้ว');
+    return;
+  }
+
+  if (!selectedType) {
+    showToast('⚠️ กรุณาเลือกประเภท OT');
+    return;
+  }
+
+  otData[key] = { hours: selectedHours, type: selectedType };
+  save();
+  closeModal();
+  renderCalendar();
+  showToast(`✅ บันทึก OT ${selectedHours} ชม. สำเร็จ`);
+}
+
+// ── Pages ──
+function switchPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  const pageEl = document.getElementById(`page-${page}`);
+  if (pageEl) {
+    pageEl.classList.add('active');
+    pageEl.style.display = 'block';
+  }
+  document.getElementById(`nav-${page}`)?.classList.add('active');
+
+  if (page === 'summary') renderSummary();
+  if (page === 'info') renderInfo();
+}
+
+// ── Summary ──
+function renderSummary() {
+  const wrap = document.getElementById('summaryContent');
+  const monthKey = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}`;
+  const label = `${thMonths[currentMonth]} ${currentYear + 543}`;
+
+  // Collect entries for this month
+  let totalHours = 0;
+  let totalOT = 0;
+  let totalMeal = 0;
+  let totalTransport = 0;
+  let ot15h = 0, ot2h = 0, ot3h = 0;
+  let days15 = 0, days2 = 0, days3 = 0;
+  let entries = [];
+
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const key = getKey(currentYear, currentMonth, d);
+    const entry = otData[key];
+    if (entry && entry.hours > 0) {
+      const c = calcDay(entry.hours, entry.type);
+      totalHours += entry.hours;
+      totalOT += c.ot;
+      totalMeal += c.meal;
+      totalTransport += c.transport;
+      if (entry.type == 1.5) { ot15h += entry.hours; days15++; }
+      if (entry.type == 2) { ot2h += entry.hours; days2++; }
+      if (entry.type == 3) { ot3h += entry.hours; days3++; }
+      entries.push({ day: d, ...entry, ...c });
+    }
+  }
+
+  const totalAllowances = totalMeal + totalTransport;
+  const grandTotal = BASE_SALARY + totalOT + totalAllowances;
+  const totalEarned = totalOT + totalAllowances;
+
+  if (entries.length === 0) {
+    wrap.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">📭</div>
+        <p>ยังไม่มีข้อมูล OT<br>ใน${label}</p>
+      </div>
+    `;
+    return;
+  }
+
+  const now = new Date();
+  const isCurrentMonth = now.getMonth() === currentMonth && now.getFullYear() === currentYear;
+  const mtdLabel = isCurrentMonth ? `Month-to-Date (วันที่ ${now.getDate()})` : label;
+
+  wrap.innerHTML = `
+    <div class="summary-hero">
+      <div class="hero-label">💰 รวมได้รับเดือนนี้</div>
+      <div class="hero-amount">฿${grandTotal.toLocaleString('th-TH', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+      <div class="hero-subtitle">${mtdLabel}</div>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-label">ชม. OT รวม</div>
+        <div class="stat-value" style="color:var(--accent)">${totalHours}</div>
+        <div class="stat-unit">ชั่วโมง</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">วันที่ทำ OT</div>
+        <div class="stat-value" style="color:var(--blue)">${entries.length}</div>
+        <div class="stat-unit">วัน</div>
+      </div>
+    </div>
+
+    <div class="breakdown-card">
+      <div class="breakdown-title">💼 สรุปรายได้</div>
+      <div class="breakdown-row">
+        <div>
+          <div class="breakdown-label">เงินเดือน</div>
+          <div class="breakdown-sub">21,600 ÷ 25 วัน</div>
+        </div>
+        <div class="breakdown-amount" style="color:var(--text)">฿${BASE_SALARY.toLocaleString('th-TH')}</div>
+      </div>
+      <div class="breakdown-row">
+        <div>
+          <div class="breakdown-label">OT Pay รวม</div>
+          <div class="breakdown-sub">${totalHours} ชม. × ฿129.6</div>
+        </div>
+        <div class="breakdown-amount" style="color:var(--accent)">฿${totalOT.toLocaleString('th-TH', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+      </div>
+      <div class="breakdown-row">
+        <div>
+          <div class="breakdown-label">ค่าข้าว</div>
+          <div class="breakdown-sub">${entries.filter(e=>e.meal>0).length} วัน</div>
+        </div>
+        <div class="breakdown-amount" style="color:var(--green)">฿${totalMeal.toLocaleString('th-TH')}</div>
+      </div>
+      <div class="breakdown-row">
+        <div>
+          <div class="breakdown-label">ค่ารถ</div>
+          <div class="breakdown-sub">${entries.filter(e=>e.transport>0).length} วัน × ฿60</div>
+        </div>
+        <div class="breakdown-amount" style="color:var(--green)">฿${totalTransport.toLocaleString('th-TH')}</div>
+      </div>
+      <div class="breakdown-row grand-total-row">
+        <div class="breakdown-label">รวมทั้งหมด</div>
+        <div class="breakdown-amount">฿${grandTotal.toLocaleString('th-TH', {minimumFractionDigits:2, maximumFractionDigits:2})}</div>
+      </div>
+    </div>
+
+    ${(ot15h > 0 || ot2h > 0 || ot3h > 0) ? `
+    <div class="breakdown-card">
+      <div class="breakdown-title">📋 แยกตามประเภท OT</div>
+      ${ot15h > 0 ? `
+      <div class="ot-type-row">
+        <div class="ot-dot" style="background:var(--green)"></div>
+        <div class="ot-info">
+          <div class="name">×1.5 <span class="type-tag tag-15">วันธรรมดา</span></div>
+          <div class="hours">${ot15h} ชม. (${days15} วัน)</div>
+        </div>
+        <div class="ot-pay">฿${(ot15h * HOURLY_RATE * 1.5).toFixed(2)}</div>
+      </div>` : ''}
+      ${ot2h > 0 ? `
+      <div class="ot-type-row">
+        <div class="ot-dot" style="background:var(--blue)"></div>
+        <div class="ot-info">
+          <div class="name">×2 <span class="type-tag tag-2">วันหยุด</span></div>
+          <div class="hours">${ot2h} ชม. (${days2} วัน)</div>
+        </div>
+        <div class="ot-pay">฿${(ot2h * HOURLY_RATE * 2).toFixed(2)}</div>
+      </div>` : ''}
+      ${ot3h > 0 ? `
+      <div class="ot-type-row">
+        <div class="ot-dot" style="background:var(--purple)"></div>
+        <div class="ot-info">
+          <div class="name">×3 <span class="type-tag tag-3">นักขัตฤกษ์</span></div>
+          <div class="hours">${ot3h} ชม. (${days3} วัน)</div>
+        </div>
+        <div class="ot-pay">฿${(ot3h * HOURLY_RATE * 3).toFixed(2)}</div>
+      </div>` : ''}
+    </div>` : ''}
+
+    <div class="day-list">
+      <div class="day-list-title">รายวัน</div>
+      ${entries.map(e => {
+        const date = new Date(currentYear, currentMonth, e.day);
+        const dow = thDays[date.getDay()];
+        const typeColors = {'1.5': 'tag-15', '2': 'tag-2', '3': 'tag-3'};
+        return `
+        <div class="day-entry" onclick="openModal(${e.day})">
+          <div class="day-entry-date">${e.day}</div>
+          <div class="day-entry-info">
+            <div class="weekname">${dow}</div>
+            <div class="otinfo">${e.hours} ชม. <span class="type-tag ${typeColors[String(e.type)]}">×${e.type}</span></div>
+          </div>
+          <div class="day-entry-earn">
+            ฿${e.total.toFixed(2)}
+            <div class="earn-sub">แตะเพื่อแก้ไข</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderInfo() {
+  const pageEl = document.getElementById('page-info');
+  if (!pageEl) return;
+  pageEl.innerHTML = `
+    <div class="summary-wrap">
+      <div class="breakdown-card">
+        <div class="breakdown-title">⚙️ ข้อมูลเงินเดือน</div>
+        <div class="breakdown-row">
+          <div class="breakdown-label">เงินเดือนฐาน</div>
+          <div class="breakdown-amount" style="color:var(--text)">฿21,600</div>
+        </div>
+        <div class="breakdown-row">
+          <div class="breakdown-label">ค่าแรงต่อชั่วโมง</div>
+          <div class="breakdown-amount" style="color:var(--accent)">฿129.60</div>
+        </div>
+      </div>
+      <div class="breakdown-card">
+        <div class="breakdown-title">🍚 ค่าข้าว / ค่ารถ</div>
+        <div class="breakdown-row">
+          <div><div class="breakdown-label">ค่าข้าว (OT ≥ 1 ชม.)</div></div>
+          <div class="breakdown-amount" style="color:var(--green)">+฿83</div>
+        </div>
+        <div class="breakdown-row">
+          <div><div class="breakdown-label">ค่าข้าวเพิ่ม (OT ≥ 5 ชม.)</div></div>
+          <div class="breakdown-amount" style="color:var(--green)">+฿83</div>
+        </div>
+        <div class="breakdown-row">
+          <div><div class="breakdown-label">ค่ารถ (OT ≥ 1 ชม.)</div></div>
+          <div class="breakdown-amount" style="color:var(--green)">+฿60</div>
+        </div>
+      </div>
+      <div class="breakdown-card">
+        <div class="breakdown-title">📈 อัตรา OT</div>
+        <div class="breakdown-row">
+          <div><div class="breakdown-label">OT ×1.5 (วันธรรมดา)</div></div>
+          <div class="breakdown-amount" style="color:var(--green)">฿194.40/ชม.</div>
+        </div>
+        <div class="breakdown-row">
+          <div><div class="breakdown-label">OT ×2 (วันหยุด)</div></div>
+          <div class="breakdown-amount" style="color:var(--blue)">฿259.20/ชม.</div>
+        </div>
+        <div class="breakdown-row">
+          <div><div class="breakdown-label">OT ×3 (นักขัตฤกษ์)</div></div>
+          <div class="breakdown-amount" style="color:var(--purple)">฿388.80/ชม.</div>
+        </div>
+      </div>
+      <div class="breakdown-card">
+        <div class="breakdown-title">📱 วิธีติดตั้ง PWA</div>
+        <div class="breakdown-row" style="flex-direction:column; align-items:flex-start; gap:6px;">
+          <div class="breakdown-label" style="font-weight:700;">iPhone / iPad</div>
+          <div class="breakdown-sub" style="color:var(--text2); font-size:13px; line-height:1.7;">1. เปิดใน Safari<br>2. กดปุ่ม Share (กล่องลูกศรขึ้น)<br>3. เลือก "เพิ่มไปที่หน้าจอโฮม"<br>4. กด "เพิ่ม"</div>
+        </div>
+        <div class="breakdown-row" style="flex-direction:column; align-items:flex-start; gap:6px; border-top: 1px solid var(--border);">
+          <div class="breakdown-label" style="font-weight:700;">Android</div>
+          <div class="breakdown-sub" style="color:var(--text2); font-size:13px; line-height:1.7;">1. เปิดใน Chrome<br>2. กดเมนู ⋮ (3 จุด)<br>3. เลือก "เพิ่มลงในหน้าจอหลัก"<br>4. กด "เพิ่ม"</div>
+        </div>
+      </div>
+      <div style="text-align:center; padding:16px; color:var(--text3); font-size:12px;">
+        ข้อมูลเก็บในเครื่องของคุณ (localStorage)<br>ไม่มีการส่งข้อมูลไปไหน
+      </div>
+    </div>
+  `;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Register SW
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
