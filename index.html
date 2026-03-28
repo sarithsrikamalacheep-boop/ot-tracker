@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>OT Tracker</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#06060f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="OT Tracker">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg:        #06060f;
+      --bg2:       #0c0c1a;
+      --glass:     rgba(255,255,255,0.04);
+      --glass2:    rgba(255,255,255,0.07);
+      --glass3:    rgba(255,255,255,0.10);
+      --border:    rgba(255,255,255,0.08);
+      --border2:   rgba(255,255,255,0.14);
+
+      --gold:      #f59e0b;
+      --gold2:     #fbbf24;
+      --orange:    #f97316;
+      --gold-glow: rgba(245,158,11,0.20);
+      --gold-glow2:rgba(245,158,11,0.40);
+
+      --green:     #10b981;
+      --green-dim: rgba(16,185,129,0.15);
+      --blue:      #6366f1;
+      --blue-dim:  rgba(99,102,241,0.15);
+      --purple:    #a855f7;
+      --purple-dim:rgba(168,85,247,0.15);
+      --red:       #f43f5e;
+      --red-dim:   rgba(244,63,94,0.15);
+
+      --text:      #f8fafc;
+      --text2:     #94a3b8;
+      --text3:     #475569;
+
+      --r:  16px;
+      --r2: 20px;
+      --r3: 24px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    html { height: -webkit-fill-available; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans Thai', 'Space Grotesk', sans-serif;
+      min-height: 100vh;
+      min-height: -webkit-fill-available;
+      overflow: hidden;
+    }
+
+    /* ── Noise + Mesh BG ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 50% at 80% 10%, rgba(245,158,11,0.07) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 40% at 10% 90%, rgba(99,102,241,0.06) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 430px;
+      margin: 0 auto;
+      height: 100vh;
+      height: -webkit-fill-available;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* ── HEADER ── */
+    .header {
+      flex-shrink: 0;
+      padding: 54px 20px 14px;
+      position: relative;
+    }
+
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--gold), var(--orange));
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 4px 16px var(--gold-glow2);
+    }
+
+    .logo-text {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      background: linear-gradient(90deg, var(--gold2), var(--orange));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .month-pill {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      background: var(--glass2);
+      border: 1px solid var(--border2);
+      border-radius: 100px;
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+    }
+
+    .month-arrow {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      color: var(--text2);
+      cursor: pointer;
+      transition: all 0.15s;
+      border: none;
+      background: none;
+    }
+
+    .month-arrow:active { background: var(--glass3); color: var(--gold); }
+
+    .month-text {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text);
+      padding: 0 4px;
+      min-width: 120px;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    /* ── TABS ── */
+    .tabs {
+      display: flex;
+      gap: 6px;
+      padding: 0 20px 14px;
+      flex-shrink: 0;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 9px 6px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text3);
+      cursor: pointer;
+      border-radius: 100px;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+
+    .tab.active {
+      color: var(--bg);
+      background: linear-gradient(135deg, var(--gold), var(--orange));
+      box-shadow: 0 2px 16px var(--gold-glow2);
+    }
+
+    /* ── CONTENT ── */
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+      padding: 0 0 90px;
+    }
+
+    .content::-webkit-scrollbar { width: 0; }
+
+    .page { display: none; animation: fadeSlide 0.25s ease; }
+    .page.active { display: block; }
+
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── CALENDAR ── */
+    .cal-wrap { padding: 0 16px; }
+
+    /* Quick stats bar */
+    .quick-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .qs-card {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 12px 10px;
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+
+    .qs-val {
+      font-family: 'Space Grotesk', monospace;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .qs-label { font-size: 10px; color: var(--text3); margin-top: 4px; font-weight: 600; letter-spacing: 0.3px; }
+
+    /* Weekday headers */
+    .weekdays {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      margin-bottom: 6px;
+    }
+
+    .wd {
+      text-align: center;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 4px 0;
+      letter-spacing: 0.4px;
+      color: var(--text3);
+    }
+    .wd:first-child { color: var(--red); }
+    .wd:last-child  { color: var(--gold); }
+
+    /* Grid */
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 5px;
+    }
+
+    .dc {
+      aspect-ratio: 1;
+      border-radius: 13px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      background: var(--glass);
+      border: 1px solid var(--border);
+      transition: transform 0.12s, background 0.12s;
+      position: relative;
+      overflow: hidden;
+      gap: 2px;
+    }
+
+    .dc:active { transform: scale(0.88); }
+    .dc.empty  { background: transparent; border-color: transparent; pointer-events: none; }
+    .dc.today  { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold), 0 0 12px var(--gold-glow); }
+    .dc.has-ot { background: var(--glass2); }
+    .dc.sun .dn { color: var(--red); }
+    .dc.sat .dn { color: var(--gold); }
+    .dc.faded   { opacity: 0.38; }
+
+    .dc.has-ot::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(249,115,22,0.06));
+    }
+
+    .dn {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text2);
+      line-height: 1;
+      position: relative;
+    }
+
+    .dc.today .dn { color: var(--gold); font-weight: 700; }
+
+    .ob {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--gold);
+      background: var(--gold-glow);
+      border-radius: 4px;
+      padding: 1px 4px;
+      line-height: 1.3;
+      position: relative;
+    }
+
+    .otdot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      position: relative;
+    }
+
+    /* ── BOTTOM NAV ── */
+    .bnav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 430px;
+      z-index: 50;
+      padding: 0 16px 24px;
+    }
+
+    .bnav-inner {
+      background: rgba(12,12,26,0.85);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border: 1px solid var(--border2);
+      border-radius: 24px;
+      display: flex;
+      padding: 6px;
+      gap: 4px;
+    }
+
+    .ni {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      padding: 8px 6px;
+      border-radius: 18px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .ni.active {
+      background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(249,115,22,0.18));
+    }
+
+    .ni-icon { font-size: 20px; line-height: 1; }
+    .ni-lbl  { font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 0.2px; }
+    .ni.active .ni-lbl { color: var(--gold); }
+
+    /* ── MODAL SHEET ── */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      z-index: 200;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    .overlay.open { display: flex; }
+
+    .sheet {
+      width: 100%;
+      max-width: 430px;
+      background: linear-gradient(170deg, #0f0f1e 0%, #0a0a16 100%);
+      border: 1px solid var(--border2);
+      border-bottom: none;
+      border-radius: 28px 28px 0 0;
+      max-height: 88vh;
+      overflow-y: auto;
+      animation: sheetUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    .sheet::-webkit-scrollbar { width: 0; }
+
+    @keyframes sheetUp {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
+
+    .sh-handle {
+      width: 40px; height: 4px;
+      background: var(--glass3);
+      border-radius: 2px;
+      margin: 14px auto 0;
+    }
+
+    .sh-head {
+      padding: 16px 20px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sh-title { font-size: 16px; font-weight: 700; }
+
+    .sh-date {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gold);
+      background: var(--gold-glow);
+      padding: 3px 10px;
+      border-radius: 100px;
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+
+    .sh-close {
+      width: 32px; height: 32px;
+      background: var(--glass2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text2);
+      font-size: 16px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .sh-body { padding: 20px; }
+
+    .sec-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text3);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    /* Hour Grid */
+    .hgrid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+
+    .hbtn {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      padding: 13px 6px;
+      border-radius: 14px;
+      font-size: 15px;
+      font-weight: 700;
+      font-family: 'Space Grotesk', sans-serif;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+
+    .hbtn:active { transform: scale(0.90); }
+
+    .hbtn.sel {
+      background: linear-gradient(135deg, var(--gold), var(--orange));
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 4px 18px var(--gold-glow2);
+    }
+
+    .hbtn.zero {
+      grid-column: span 4;
+      background: var(--red-dim);
+      border-color: rgba(244,63,94,0.25);
+      color: var(--red);
+      font-size: 13px;
+      padding: 11px;
+    }
+
+    .hbtn.zero.sel {
+      background: var(--red);
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(244,63,94,0.35);
+    }
+
+    /* Type Grid */
+    .tgrid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .tbtn {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      padding: 14px 6px;
+      border-radius: 16px;
+      cursor: pointer;
+      transition: all 0.18s;
+      text-align: center;
+    }
+
+    .tbtn:active { transform: scale(0.90); }
+    .tbtn.dis    { opacity: 0.28; pointer-events: none; }
+
+    .tmult {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      display: block;
+      line-height: 1;
+    }
+
+    .tdesc { font-size: 10px; color: var(--text3); margin-top: 5px; font-weight: 600; }
+
+    .tbtn.t15 .tmult { color: var(--green); }
+    .tbtn.t2  .tmult { color: var(--blue);  }
+    .tbtn.t3  .tmult { color: var(--purple);}
+
+    .tbtn.t15.sel { background: var(--green-dim);  border-color: var(--green);  }
+    .tbtn.t2.sel  { background: var(--blue-dim);   border-color: var(--blue);   }
+    .tbtn.t3.sel  { background: var(--purple-dim); border-color: var(--purple); }
+
+    /* Preview */
+    .prev-card {
+      background: var(--glass);
+      border: 1px solid var(--border2);
+      border-radius: var(--r2);
+      overflow: hidden;
+      margin-bottom: 18px;
+    }
+
+    .prev-head {
+      padding: 10px 16px;
+      background: linear-gradient(90deg, var(--gold-glow), transparent);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--gold);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    .prev-rows { padding: 4px 0; }
+
+    .prev-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 16px;
+    }
+
+    .prev-row + .prev-row { border-top: 1px solid var(--border); }
+
+    .prev-lbl { font-size: 13px; color: var(--text2); }
+    .prev-val {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .prev-total {
+      background: linear-gradient(90deg, rgba(16,185,129,0.08), transparent);
+      border-top: 1px solid rgba(16,185,129,0.2) !important;
+    }
+    .prev-total .prev-lbl { font-weight: 700; color: var(--text); font-size: 14px; }
+    .prev-total .prev-val { color: var(--green); font-size: 16px; }
+
+    /* Save btn */
+    .btn-save {
+      width: 100%;
+      background: linear-gradient(135deg, var(--gold), var(--orange));
+      border: none;
+      color: #fff;
+      padding: 17px;
+      border-radius: var(--r2);
+      font-size: 16px;
+      font-weight: 700;
+      font-family: 'Noto Sans Thai', sans-serif;
+      cursor: pointer;
+      box-shadow: 0 6px 24px var(--gold-glow2);
+      transition: all 0.15s;
+      letter-spacing: 0.3px;
+    }
+
+    .btn-save:active { transform: scale(0.97); opacity: 0.88; }
+
+    /* ── SUMMARY ── */
+    .sum-wrap { padding: 0 16px; }
+
+    /* Hero */
+    .sum-hero {
+      background: linear-gradient(135deg, rgba(245,158,11,0.12) 0%, rgba(99,102,241,0.06) 100%);
+      border: 1px solid rgba(245,158,11,0.2);
+      border-radius: var(--r3);
+      padding: 24px 20px;
+      margin-bottom: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sum-hero::after {
+      content: '';
+      position: absolute;
+      right: -30px; top: -30px;
+      width: 140px; height: 140px;
+      background: radial-gradient(circle, var(--gold-glow2) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 12px;
+    }
+
+    .hero-badge {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--gold);
+      background: var(--gold-glow);
+      border: 1px solid rgba(245,158,11,0.25);
+      padding: 4px 10px;
+      border-radius: 100px;
+      letter-spacing: 0.5px;
+    }
+
+    .hero-lbl { font-size: 12px; color: var(--text3); font-weight: 600; margin-bottom: 6px; }
+
+    .hero-amount {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 38px;
+      font-weight: 700;
+      color: var(--green);
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+
+    .hero-sub { font-size: 12px; color: var(--text3); margin-top: 5px; }
+
+    .hero-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+
+    .chip {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      background: var(--glass2);
+      border: 1px solid var(--border);
+      border-radius: 100px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .chip-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+    /* Stat grid */
+    .sg { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+
+    .sc {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      padding: 16px;
+      backdrop-filter: blur(8px);
+    }
+
+    .sc-lbl { font-size: 10px; font-weight: 700; color: var(--text3); letter-spacing: 0.6px; text-transform: uppercase; margin-bottom: 8px; }
+    .sc-val {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .sc-unit { font-size: 12px; color: var(--text3); margin-top: 4px; }
+
+    /* Breakdown */
+    .bcard {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+
+    .bcard-head {
+      padding: 14px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      background: var(--glass);
+    }
+
+    .br {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 13px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .br:last-child { border-bottom: none; }
+
+    .br-lbl { font-size: 14px; color: var(--text2); }
+    .br-sub { font-size: 11px; color: var(--text3); margin-top: 2px; }
+    .br-amt {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .grand-row {
+      background: linear-gradient(90deg, rgba(16,185,129,0.08), transparent);
+      border-top: 1.5px solid rgba(16,185,129,0.3) !important;
+    }
+    .grand-row .br-lbl { font-size: 15px; font-weight: 700; color: var(--text); }
+    .grand-row .br-amt { font-size: 20px; color: var(--green); }
+
+    /* OT type rows */
+    .ot-type-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .ot-type-row:last-child { border-bottom: none; }
+
+    .otd { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .oti { flex: 1; }
+    .oti .otn { font-size: 14px; font-weight: 600; }
+    .oti .oth { font-size: 11px; color: var(--text3); margin-top: 2px; }
+    .otpay {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .type-tag {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      font-family: 'Space Grotesk', sans-serif;
+      margin-left: 4px;
+    }
+    .tt15 { background: var(--green-dim);  color: var(--green); }
+    .tt2  { background: var(--blue-dim);   color: var(--blue);  }
+    .tt3  { background: var(--purple-dim); color: var(--purple);}
+
+    /* Day list */
+    .dl-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text3);
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      padding: 0 2px;
+      margin-bottom: 8px;
+    }
+
+    .de {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 13px 14px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .de:active { background: var(--glass2); }
+
+    .de-day {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text2);
+      width: 30px;
+      text-align: center;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .de-info { flex: 1; }
+    .de-wday { font-size: 11px; color: var(--text3); }
+    .de-ot   { font-size: 14px; font-weight: 600; margin-top: 3px; }
+
+    .de-earn { text-align: right; }
+    .de-earn .amt {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--gold);
+    }
+    .de-earn .sub { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+    /* INFO page */
+    .info-wrap { padding: 0 16px; }
+
+    .info-card {
+      background: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: var(--r2);
+      overflow: hidden;
+      margin-bottom: 14px;
+    }
+
+    .info-head {
+      padding: 14px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      background: var(--glass);
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 13px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .info-row:last-child { border-bottom: none; }
+
+    .info-lbl { font-size: 13px; color: var(--text2); }
+    .info-val {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .install-steps { padding: 14px 18px; }
+    .is-os { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+    .is-list { font-size: 13px; color: var(--text2); line-height: 2; }
+
+    /* Empty state */
+    .empty {
+      text-align: center;
+      padding: 60px 20px;
+    }
+    .empty-ico { font-size: 52px; margin-bottom: 14px; }
+    .empty p { font-size: 14px; color: var(--text3); line-height: 1.7; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 56px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-16px);
+      background: rgba(16,185,129,0.95);
+      backdrop-filter: blur(12px);
+      color: #fff;
+      padding: 10px 22px;
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 700;
+      z-index: 999;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      pointer-events: none;
+      white-space: nowrap;
+      border: 1px solid rgba(16,185,129,0.4);
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.warn { background: rgba(245,158,11,0.95); border-color: rgba(245,158,11,0.4); }
+  </style>
+</head>
+
+<body>
+<div class="app">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-row">
+      <div class="logo">
+        <div class="logo-icon">⏱</div>
+        <div class="logo-text">OT Tracker</div>
+      </div>
+      <div class="month-pill">
+        <button class="month-arrow" onclick="changeMonth(-1)">‹</button>
+        <div class="month-text" id="monthLabel"></div>
+        <button class="month-arrow" onclick="changeMonth(1)">›</button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <div class="tab active" id="tab-cal"  onclick="switchPage('cal')">📅 ปฏิทิน</div>
+      <div class="tab"        id="tab-sum"  onclick="switchPage('sum')">📊 สรุป</div>
+      <div class="tab"        id="tab-info" onclick="switchPage('info')">⚙️ ข้อมูล</div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- Calendar page -->
+    <div class="page active" id="page-cal">
+      <div class="cal-wrap">
+        <div class="quick-stats" id="quickStats"></div>
+        <div class="weekdays">
+          <div class="wd">อา</div><div class="wd">จ</div><div class="wd">อ</div>
+          <div class="wd">พ</div><div class="wd">พฤ</div><div class="wd">ศ</div><div class="wd">ส</div>
+        </div>
+        <div class="cal-grid" id="calGrid"></div>
+      </div>
+    </div>
+
+    <!-- Summary page -->
+    <div class="page" id="page-sum">
+      <div class="sum-wrap" id="sumContent"></div>
+    </div>
+
+    <!-- Info page -->
+    <div class="page" id="page-info">
+      <div class="info-wrap" id="infoContent"></div>
+    </div>
+
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bnav">
+    <div class="bnav-inner">
+      <div class="ni active" id="nav-cal"  onclick="switchPage('cal')">
+        <div class="ni-icon">📅</div>
+        <div class="ni-lbl">ปฏิทิน</div>
+      </div>
+      <div class="ni" id="nav-sum"  onclick="switchPage('sum')">
+        <div class="ni-icon">📊</div>
+        <div class="ni-lbl">สรุป</div>
+      </div>
+      <div class="ni" id="nav-info" onclick="switchPage('info')">
+        <div class="ni-icon">⚙️</div>
+        <div class="ni-lbl">ข้อมูล</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="bgClose(event)">
+  <div class="sheet" id="sheet">
+    <div class="sh-handle"></div>
+    <div class="sh-head">
+      <div>
+        <div class="sh-title">บันทึก OT</div>
+      </div>
+      <div class="sh-date" id="shDate"></div>
+      <button class="sh-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="sh-body">
+
+      <div class="sec-label">จำนวนชั่วโมง OT</div>
+      <div class="hgrid">
+        <button class="hbtn zero" onclick="pickH(0)">❌ ไม่มี OT</button>
+        <button class="hbtn" onclick="pickH(0.5)">0.5</button>
+        <button class="hbtn" onclick="pickH(1)">1</button>
+        <button class="hbtn" onclick="pickH(1.5)">1.5</button>
+        <button class="hbtn" onclick="pickH(2)">2</button>
+        <button class="hbtn" onclick="pickH(2.5)">2.5</button>
+        <button class="hbtn" onclick="pickH(3)">3</button>
+        <button class="hbtn" onclick="pickH(3.5)">3.5</button>
+        <button class="hbtn" onclick="pickH(4)">4</button>
+        <button class="hbtn" onclick="pickH(4.5)">4.5</button>
+        <button class="hbtn" onclick="pickH(5)">5</button>
+        <button class="hbtn" onclick="pickH(5.5)">5.5</button>
+      </div>
+
+      <div class="sec-label">ประเภท OT</div>
+      <div class="tgrid">
+        <button class="tbtn t15 dis" onclick="pickT(1.5)">
+          <span class="tmult">×1.5</span>
+          <div class="tdesc">วันธรรมดา</div>
+        </button>
+        <button class="tbtn t2 dis" onclick="pickT(2)">
+          <span class="tmult">×2</span>
+          <div class="tdesc">วันหยุด</div>
+        </button>
+        <button class="tbtn t3 dis" onclick="pickT(3)">
+          <span class="tmult">×3</span>
+          <div class="tdesc">นักขัตฤกษ์</div>
+        </button>
+      </div>
+
+      <div class="prev-card" id="prevCard" style="display:none">
+        <div class="prev-head">ตัวอย่างรายได้วันนี้</div>
+        <div class="prev-rows">
+          <div class="prev-row">
+            <span class="prev-lbl">OT Pay</span>
+            <span class="prev-val" id="pOT">—</span>
+          </div>
+          <div class="prev-row">
+            <span class="prev-lbl">ค่าข้าว</span>
+            <span class="prev-val" id="pMeal">—</span>
+          </div>
+          <div class="prev-row">
+            <span class="prev-lbl">ค่ารถ</span>
+            <span class="prev-val" id="pTrans">—</span>
+          </div>
+          <div class="prev-row prev-total">
+            <span class="prev-lbl">รวมได้วันนี้</span>
+            <span class="prev-val" id="pTotal">—</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-save" onclick="saveEntry()">💾 บันทึก</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONSTANTS ──
+const BASE       = 21600;
+const HOURLY     = 129.6;
+const MEAL_1H    = 83;
+const MEAL_5H    = 83;
+const TRANSPORT  = 60;
+const MTH_MEAL   = 1700; // ค่าข้าวรายเดือน
+
+const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const TH_DAYS   = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+const TH_SHORT  = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+
+// ── STATE ──
+let cy, cm;
+let selDay = null, selH = null, selT = null;
+let db = JSON.parse(localStorage.getItem('ot2') || '{}');
+
+function save() { localStorage.setItem('ot2', JSON.stringify(db)); }
+function key(y, m, d) { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+
+// ── INIT ──
+const now = new Date();
+cy = now.getFullYear();
+cm = now.getMonth();
+renderCal();
+
+// ── CALENDAR ──
+function renderCal() {
+  const lbl = `${TH_MONTHS[cm]} ${cy + 543}`;
+  document.getElementById('monthLabel').textContent = lbl;
+
+  const first  = new Date(cy, cm, 1).getDay();
+  const days   = new Date(cy, cm + 1, 0).getDate();
+  const today  = new Date();
+  const isNow  = today.getMonth() === cm && today.getFullYear() === cy;
+
+  // Quick stats
+  let qH = 0, qDays = 0, qEarn = 0;
+  for (let d = 1; d <= days; d++) {
+    const e = db[key(cy, cm, d)];
+    if (e && e.h > 0) {
+      qH += e.h;
+      qDays++;
+      const c = calc(e.h, e.t);
+      qEarn += c.total;
+    }
+  }
+
+  const qsColors = ['var(--gold)', 'var(--blue)', 'var(--green)'];
+  document.getElementById('quickStats').innerHTML = `
+    <div class="qs-card">
+      <div class="qs-val" style="color:${qsColors[0]}">${qH}</div>
+      <div class="qs-label">ชม. OT</div>
+    </div>
+    <div class="qs-card">
+      <div class="qs-val" style="color:${qsColors[1]}">${qDays}</div>
+      <div class="qs-label">วัน OT</div>
+    </div>
+    <div class="qs-card">
+      <div class="qs-val" style="color:${qsColors[2]}" style="font-size:16px">฿${Math.round(qEarn).toLocaleString()}</div>
+      <div class="qs-label">OT+เบี้ย</div>
+    </div>
+  `;
+
+  // Grid
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+
+  for (let i = 0; i < first; i++) grid.insertAdjacentHTML('beforeend', '<div class="dc empty"></div>');
+
+  for (let d = 1; d <= days; d++) {
+    const date  = new Date(cy, cm, d);
+    const dow   = date.getDay();
+    const k     = key(cy, cm, d);
+    const entry = db[k];
+    const isToday = isNow && today.getDate() === d;
+    const isPast  = date < new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+    let cls = 'dc';
+    if (isToday) cls += ' today';
+    if (dow === 0) cls += ' sun';
+    if (dow === 6) cls += ' sat';
+    if (isPast && !isToday) cls += ' faded';
+    if (entry && entry.h > 0) cls += ' has-ot';
+
+    let badge = '', dot = '';
+    if (entry && entry.h > 0) {
+      badge = `<div class="ob">${entry.h}h</div>`;
+      const dc = {'1.5':'#10b981','2':'#6366f1','3':'#a855f7'}[String(entry.t)] || '#f59e0b';
+      dot = `<div class="otdot" style="background:${dc}"></div>`;
+    }
+
+    grid.insertAdjacentHTML('beforeend',
+      `<div class="${cls}" onclick="openModal(${d})">`+
+      `<div class="dn">${d}</div>${badge}${dot}</div>`
+    );
+  }
+}
+
+// ── CALC ──
+function calc(h, t) {
+  if (!h || h === 0) return { ot:0, meal:0, trans:0, total:0 };
+  const ot    = h * HOURLY * t;
+  const meal  = h >= 1 ? MEAL_1H + (h >= 5 ? MEAL_5H : 0) : 0;
+  const trans = h >= 1 ? TRANSPORT : 0;
+  return { ot, meal, trans, total: ot + meal + trans };
+}
+
+function fmt(n) { return '฿' + n.toLocaleString('th-TH', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function fmtI(n) { return '฿' + n.toLocaleString('th-TH'); }
+
+// ── MODAL ──
+function openModal(d) {
+  selDay = d;
+  const k = key(cy, cm, d);
+  const e = db[k];
+
+  selH = e ? e.h : null;
+  selT = e ? e.t : null;
+
+  const date = new Date(cy, cm, d);
+  document.getElementById('shDate').textContent =
+    `${d} ${TH_MONTHS[cm]} ${cy+543} · ${TH_DAYS[date.getDay()]}`;
+
+  refreshHBtns();
+  refreshTBtns();
+  refreshPrev();
+
+  document.getElementById('overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function bgClose(e) { if (e.target === document.getElementById('overlay')) closeModal(); }
+
+function pickH(h) {
+  selH = h;
+  if (h === 0) selT = null;
+  refreshHBtns();
+  refreshTBtns();
+  refreshPrev();
+}
+
+function pickT(t) {
+  selT = t;
+  refreshTBtns();
+  refreshPrev();
+}
+
+function refreshHBtns() {
+  document.querySelectorAll('.hbtn').forEach(b => {
+    const v = b.textContent.trim();
+    const bh = v === '❌ ไม่มี OT' ? 0 : parseFloat(v);
+    b.classList.toggle('sel', bh === selH);
+  });
+}
+
+function refreshTBtns() {
+  const dis = !selH || selH === 0;
+  document.querySelectorAll('.tbtn').forEach(b => {
+    b.classList.toggle('dis', dis);
+    if (!dis) {
+      const bt = parseFloat(b.querySelector('.tmult').textContent.replace('×',''));
+      b.classList.toggle('sel', bt === selT);
+    } else {
+      b.classList.remove('sel');
+    }
+  });
+}
+
+function refreshPrev() {
+  const card = document.getElementById('prevCard');
+  if (!selH || selH === 0 || !selT) { card.style.display = 'none'; return; }
+  card.style.display = 'block';
+  const c = calc(selH, selT);
+  document.getElementById('pOT').textContent    = fmt(c.ot);
+  document.getElementById('pMeal').textContent  = fmtI(c.meal);
+  document.getElementById('pTrans').textContent = fmtI(c.trans);
+  document.getElementById('pTotal').textContent = fmt(c.total);
+}
+
+function saveEntry() {
+  const k = key(cy, cm, selDay);
+  if (!selH || selH === 0) {
+    delete db[k];
+    save(); closeModal(); renderCal();
+    toast('ลบข้อมูล OT แล้ว', false);
+    return;
+  }
+  if (!selT) { toast('⚠️ เลือกประเภท OT ด้วยนะ', true); return; }
+  db[k] = { h: selH, t: selT };
+  save(); closeModal(); renderCal();
+  toast(`✅ บันทึก OT ${selH} ชม. เรียบร้อย`);
+}
+
+// ── PAGES ──
+function switchPage(pg) {
+  ['cal','sum','info'].forEach(p => {
+    document.getElementById(`page-${p}`).classList.remove('active');
+    document.getElementById(`tab-${p}`)?.classList.remove('active');
+    document.getElementById(`nav-${p}`)?.classList.remove('active');
+  });
+  document.getElementById(`page-${pg}`).classList.add('active');
+  document.getElementById(`tab-${pg}`)?.classList.add('active');
+  document.getElementById(`nav-${pg}`)?.classList.add('active');
+
+  if (pg === 'sum')  renderSum();
+  if (pg === 'info') renderInfo();
+}
+
+// ── SUMMARY ──
+function renderSum() {
+  const wrap = document.getElementById('sumContent');
+  const days = new Date(cy, cm + 1, 0).getDate();
+  const today = new Date();
+  const isThisMonth = today.getMonth() === cm && today.getFullYear() === cy;
+
+  let totH = 0, totOT = 0, totMeal = 0, totTrans = 0;
+  let h15=0, h2=0, h3=0, d15=0, d2=0, d3=0;
+  let entries = [];
+
+  for (let d = 1; d <= days; d++) {
+    const e = db[key(cy, cm, d)];
+    if (e && e.h > 0) {
+      const c = calc(e.h, e.t);
+      totH += e.h;
+      totOT += c.ot;
+      totMeal += c.meal;
+      totTrans += c.trans;
+      if (e.t == 1.5) { h15 += e.h; d15++; }
+      if (e.t == 2)   { h2  += e.h; d2++;  }
+      if (e.t == 3)   { h3  += e.h; d3++;  }
+      entries.push({ d, ...e, ...c });
+    }
+  }
+
+  if (!entries.length) {
+    wrap.innerHTML = `<div class="empty">
+      <div class="empty-ico">📭</div>
+      <p>ยังไม่มีข้อมูล OT<br>ใน${TH_MONTHS[cm]} ${cy+543}</p>
+    </div>`;
+    return;
+  }
+
+  const grandTotal = BASE + totOT + totMeal + totTrans + MTH_MEAL;
+  const otTotal    = totOT + totMeal + totTrans;
+  const mtdLbl     = isThisMonth ? `MTD วันที่ ${today.getDate()} ${TH_MONTHS[cm]}` : `${TH_MONTHS[cm]} ${cy+543}`;
+
+  wrap.innerHTML = `
+    <div class="sum-hero">
+      <div class="hero-top">
+        <div>
+          <div class="hero-lbl">รายได้รวมเดือนนี้</div>
+          <div class="hero-amount">${grandTotal.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+          <div class="hero-sub">${mtdLbl}</div>
+        </div>
+        <div class="hero-badge">บาท</div>
+      </div>
+      <div class="hero-chips">
+        <div class="chip"><div class="chip-dot" style="background:var(--text3)"></div>เงินเดือน ${BASE.toLocaleString()}</div>
+        <div class="chip"><div class="chip-dot" style="background:var(--gold)"></div>OT ${fmt(otTotal)}</div>
+        <div class="chip"><div class="chip-dot" style="background:var(--green)"></div>ค่าข้าว/เดือน ฿1,700</div>
+      </div>
+    </div>
+
+    <div class="sg">
+      <div class="sc">
+        <div class="sc-lbl">ชม. OT รวม</div>
+        <div class="sc-val" style="color:var(--gold)">${totH}</div>
+        <div class="sc-unit">ชั่วโมง</div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">วันที่ทำ OT</div>
+        <div class="sc-val" style="color:var(--blue)">${entries.length}</div>
+        <div class="sc-unit">วัน</div>
+      </div>
+    </div>
+
+    <div class="bcard">
+      <div class="bcard-head">💰 รายได้ทั้งหมด</div>
+      <div class="br">
+        <div><div class="br-lbl">เงินเดือนฐาน</div><div class="br-sub">21,600 บาท/เดือน</div></div>
+        <div class="br-amt" style="color:var(--text)">${fmtI(BASE)}</div>
+      </div>
+      <div class="br">
+        <div><div class="br-lbl">OT Pay</div><div class="br-sub">${totH} ชม. × ฿129.60 × multiplier</div></div>
+        <div class="br-amt" style="color:var(--gold)">${fmt(totOT)}</div>
+      </div>
+      <div class="br">
+        <div><div class="br-lbl">ค่าข้าว OT (รายวัน)</div><div class="br-sub">${entries.filter(e=>e.meal>0).length} วัน</div></div>
+        <div class="br-amt" style="color:var(--green)">${fmtI(totMeal)}</div>
+      </div>
+      <div class="br">
+        <div><div class="br-lbl">ค่ารถ OT</div><div class="br-sub">${entries.filter(e=>e.trans>0).length} วัน × ฿60</div></div>
+        <div class="br-amt" style="color:var(--green)">${fmtI(totTrans)}</div>
+      </div>
+      <div class="br">
+        <div><div class="br-lbl">ค่าข้าวประจำเดือน</div><div class="br-sub">ค่าเหมาเดือนละ ฿1,700</div></div>
+        <div class="br-amt" style="color:var(--green)">${fmtI(MTH_MEAL)}</div>
+      </div>
+      <div class="br grand-row">
+        <div class="br-lbl">รวมทั้งหมด</div>
+        <div class="br-amt">${grandTotal.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+      </div>
+    </div>
+
+    ${(h15||h2||h3) ? `
+    <div class="bcard">
+      <div class="bcard-head">📋 แยกประเภท OT</div>
+      ${h15 ? `<div class="ot-type-row">
+        <div class="otd" style="background:var(--green)"></div>
+        <div class="oti"><div class="otn">×1.5 <span class="type-tag tt15">วันธรรมดา</span></div><div class="oth">${h15} ชม. · ${d15} วัน</div></div>
+        <div class="otpay">${fmt(h15*HOURLY*1.5)}</div>
+      </div>` : ''}
+      ${h2 ? `<div class="ot-type-row">
+        <div class="otd" style="background:var(--blue)"></div>
+        <div class="oti"><div class="otn">×2 <span class="type-tag tt2">วันหยุด</span></div><div class="oth">${h2} ชม. · ${d2} วัน</div></div>
+        <div class="otpay">${fmt(h2*HOURLY*2)}</div>
+      </div>` : ''}
+      ${h3 ? `<div class="ot-type-row">
+        <div class="otd" style="background:var(--purple)"></div>
+        <div class="oti"><div class="otn">×3 <span class="type-tag tt3">นักขัตฤกษ์</span></div><div class="oth">${h3} ชม. · ${d3} วัน</div></div>
+        <div class="otpay">${fmt(h3*HOURLY*3)}</div>
+      </div>` : ''}
+    </div>` : ''}
+
+    <div>
+      <div class="dl-title">รายวัน</div>
+      ${entries.map(e => {
+        const date = new Date(cy, cm, e.d);
+        const tt = {'1.5':'tt15','2':'tt2','3':'tt3'}[String(e.t)];
+        return `<div class="de" onclick="openModal(${e.d})">
+          <div class="de-day">${e.d}</div>
+          <div class="de-info">
+            <div class="de-wday">${TH_DAYS[date.getDay()]}</div>
+            <div class="de-ot">${e.h} ชม. <span class="type-tag ${tt}">×${e.t}</span></div>
+          </div>
+          <div class="de-earn">
+            <div class="amt">${fmt(e.total)}</div>
+            <div class="sub">แตะแก้ไข</div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+// ── INFO ──
+function renderInfo() {
+  document.getElementById('infoContent').innerHTML = `
+    <div class="info-card">
+      <div class="info-head">💼 อัตราเงินเดือน</div>
+      <div class="info-row"><div class="info-lbl">เงินเดือนฐาน</div><div class="info-val">฿21,600</div></div>
+      <div class="info-row"><div class="info-lbl">ค่าแรง/ชั่วโมง</div><div class="info-val">฿129.60</div></div>
+      <div class="info-row"><div class="info-lbl">ค่าข้าวประจำเดือน</div><div class="info-val" style="color:var(--green)">฿1,700</div></div>
+    </div>
+    <div class="info-card">
+      <div class="info-head">🍚 เบี้ยเลี้ยง OT รายวัน</div>
+      <div class="info-row"><div class="info-lbl">ค่าข้าว (OT ≥ 1 ชม.)</div><div class="info-val" style="color:var(--green)">+฿83</div></div>
+      <div class="info-row"><div class="info-lbl">ค่าข้าวเพิ่ม (OT ≥ 5 ชม.)</div><div class="info-val" style="color:var(--green)">+฿83</div></div>
+      <div class="info-row"><div class="info-lbl">ค่ารถ (OT ≥ 1 ชม.)</div><div class="info-val" style="color:var(--green)">+฿60</div></div>
+    </div>
+    <div class="info-card">
+      <div class="info-head">📈 อัตรา OT / ชั่วโมง</div>
+      <div class="info-row"><div class="info-lbl">×1.5 วันธรรมดา</div><div class="info-val" style="color:var(--green)">฿194.40</div></div>
+      <div class="info-row"><div class="info-lbl">×2 วันหยุด</div><div class="info-val" style="color:var(--blue)">฿259.20</div></div>
+      <div class="info-row"><div class="info-lbl">×3 นักขัตฤกษ์</div><div class="info-val" style="color:var(--purple)">฿388.80</div></div>
+    </div>
+    <div class="info-card">
+      <div class="info-head">📱 ติดตั้งเป็นแอป (PWA)</div>
+      <div class="install-steps">
+        <div class="is-os">🍎 iPhone — ใช้ Safari</div>
+        <div class="is-list">1. เปิดลิงก์ใน Safari<br>2. กด Share (กล่องลูกศรขึ้น)<br>3. เลือก "เพิ่มไปที่หน้าจอโฮม"<br>4. กด "เพิ่ม" ✅</div>
+      </div>
+      <div class="install-steps" style="border-top:1px solid var(--border)">
+        <div class="is-os">🤖 Android — ใช้ Chrome</div>
+        <div class="is-list">1. เปิดลิงก์ใน Chrome<br>2. กด ⋮ มุมขวาบน<br>3. เลือก "เพิ่มลงในหน้าจอหลัก"<br>4. กด "เพิ่ม" ✅</div>
+      </div>
+    </div>
+    <div style="text-align:center; padding:20px 0 8px; color:var(--text3); font-size:12px; line-height:1.8;">
+      ข้อมูลเก็บใน localStorage ในมือถือของคุณ<br>ไม่มีการส่งข้อมูลออกไปไหน 🔒
+    </div>
+  `;
+}
+
+// ── TOAST ──
+function toast(msg, warn=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (warn ? ' warn' : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+function changeMonth(d) {
+  cm += d;
+  if (cm > 11) { cm = 0; cy++; }
+  if (cm <  0) { cm = 11; cy--; }
+  renderCal();
+  if (document.getElementById('page-sum').classList.contains('active')) renderSum();
+}
+
+// ── SERVICE WORKER ──
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(()=>{}));
+}
+</script>
+</body>
+</html>
